@@ -25,13 +25,13 @@ In examples `request` is a `fetch` on steroids from
 ## Installation
 
 ```bash
-npm install fry-fx
+npm install effector fry-fx
 ```
 
 or
 
 ```bash
-yarn add fry-fx
+yarn add effector fry-fx
 ```
 
 ## Usage
