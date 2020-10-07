@@ -10,7 +10,7 @@
 # Cancellable fetch requests ☄️✨
 
 This lib makes it possible to create self-cancellable request
-[effects](https://effector.now.sh/docs/api/effector/effect).
+[effects](https://effector.now.sh/docs/api/effector/effect). It needs [effector](https://effector.now.sh) peer-dependency.
 
 When you trigger an effect, all previous pending fetch requests are cancelled
 (effects are rejected with AbortError).
