@@ -7,7 +7,7 @@
 [issues-image]: https://img.shields.io/github/issues/doasync/fry-fx.svg
 [issues-url]: https://github.com/doasync/fry-fx/issues
 
-# Cancellable request effects ☄️✨
+# Cancellable fetch requests ☄️✨
 
 This lib makes it possible to create self-cancellable request
 [effects](https://effector.now.sh/docs/api/effector/effect).
