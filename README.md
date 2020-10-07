@@ -10,7 +10,7 @@
 # Cancellable fetch requests ☄️✨
 
 This lib makes it possible to create self-cancellable request
-[effects](https://effector.now.sh/docs/api/effector/effect). It needs [effector](https://effector.now.sh) peer-dependency.
+[effects](https://effector.now.sh/docs/api/effector/effect). It needs [effector](https://effector.now.sh) as a peer-dependency.
 
 When you trigger an effect, all previous pending fetch requests are cancelled
 (effects are rejected with AbortError).
@@ -86,13 +86,13 @@ fetchCountryFx(3, { normal: true }); // fetch ok
 ```
 
 Initial cancel event doesn't work for normal events. Use your own cancel event
-to each normal request:
+for each normal request (optional):
 
 ```ts
 fetchCountryFx(1, { normal: true, cancel: cancelRequest });
 ```
 
-The handler is compartible with `createEffect`. This is a classic way to create
+The handler is compartible with `createEffect`. There is a classic way to create
 normal effect:
 
 ```ts
