@@ -3,12 +3,10 @@ import { Controller } from './types';
 import { createRequestFx } from './create-request-fx';
 import { createController } from './create-controller';
 
-type Country = {};
-
 // Simple usage:
 
 export const fetchCountryFx = createRequestFx(
-  async (countryId: number, controller?: Controller): Promise<Country> =>
+  async (countryId: number, controller?: Controller): Promise<Response> =>
     fetch(`api/countries/${countryId}/`, {
       signal: await controller?.getSignal(),
     })
@@ -22,7 +20,7 @@ export const fetchCountryFx2 = createRequestFx({
   handler: async (
     countryId: number,
     controller?: Controller
-  ): Promise<Country> =>
+  ): Promise<Response> =>
     fetch(`api/countries/${countryId}/`, {
       signal: await controller?.getSignal(),
     }),
@@ -43,10 +41,12 @@ fetchCountryFx(2, { normal: true }); // fetch ok
 fetchCountryFx(3, { normal: true }); // fetch ok
 
 // Initial cancel event doesn't work for normal events.
-// Use your own cancel event for each normal request (optional):
+// Use your own controller for each normal request (optional):
 
 const controller = createController();
 fetchCountryFx(1, { normal: true, controller });
+// Later in your code
+controller.cancel();
 
 // The handler is compartible with `createEffect`.
 // There is a classic way to create normal effect:
@@ -54,7 +54,7 @@ fetchCountryFx(1, { normal: true, controller });
 const fetchCountry = async (
   countryId: number,
   controller?: Controller
-): Promise<Country> =>
+): Promise<Response> =>
   fetch(`api/countries/${countryId}/`, {
     signal: await controller?.getSignal(),
   });
@@ -70,11 +70,13 @@ export const fetchCountryFx3 = createRequestFx({
   handler: async (
     countryId: number,
     controller?: Controller
-  ): Promise<Country> =>
+  ): Promise<Response> =>
     fetch(`api/locations/countries/${countryId}/`, {
       signal: await controller?.getSignal(),
     }),
 });
+
+// ... or `createController`:
 
 export const controller3 = createController({ domain: app });
 fetchCountryFx3(1, { normal: true, controller: controller3 });

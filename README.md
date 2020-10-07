@@ -92,12 +92,14 @@ fetchCountryFx(2, { normal: true }); // fetch ok
 fetchCountryFx(3, { normal: true }); // fetch ok
 ```
 
-Initial cancel event doesn't work for normal events. Use your own cancel event
+Initial cancel event doesn't work for normal events. Use your own controller
 for each normal request (optional):
 
 ```ts
 const controller = createController();
 fetchCountryFx(1, { normal: true, controller });
+// Later in your code
+controller.cancel();
 ```
 
 The handler is compartible with `createEffect`. There is a classic way to create
@@ -133,6 +135,7 @@ export const fetchCountryFx = createRequestFx({
     }),
 });
 
+// ... or `createController`:
 export const controller = createController({ domain: app });
 fetchCountryFx(1, { normal: true, controller });
 ```
