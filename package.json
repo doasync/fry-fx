@@ -1,6 +1,6 @@
 {
   "name": "fry-fx",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "author": "doasync <doasync@gmail.com>",
   "license": "MIT",
   "description": "Create self-cancellable fetch effects",

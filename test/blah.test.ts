@@ -1,7 +1,7 @@
-import { sum } from '../src';
+import { createRequestFx } from '../src';
 
 describe('test', () => {
   it('works', () => {
-    expect(sum(1, 1)).toEqual(2);
+    createRequestFx(async () => fetch('https://effector.now.sh/'));
   });
 });
