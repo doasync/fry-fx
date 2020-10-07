@@ -1,4 +1,4 @@
-import { Effect, Unit } from 'effector';
+import { Effect, Unit, Domain } from 'effector';
 
 export interface Controller {
   getSignal: Effect<void, AbortSignal>;
@@ -7,6 +7,7 @@ export interface Controller {
 
 export interface ControllerConfig {
   cancel?: Unit<unknown>;
+  domain?: Domain;
 }
 
 export type Handler<Params, Result> = (
@@ -18,6 +19,7 @@ export interface Config<Params, Result> {
   handler: Handler<Params, Result>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cancel?: Unit<any>;
+  domain?: Domain;
 }
 
 export type ConfigOrHandler<Params, Result> =
@@ -26,7 +28,7 @@ export type ConfigOrHandler<Params, Result> =
 
 export type FxOptions = {
   normal?: boolean;
-  cancel?: Unit<any>;
+  controller?: Controller;
 };
 
 export interface RequestEffect<Params, Done, Fail = Error>

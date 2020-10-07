@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "effector": "^21.4.2",
+    "fry": "^2.3.0",
     "husky": "^4.3.0",
     "tsdx": "^0.14.0",
     "tslib": "^2.0.2",

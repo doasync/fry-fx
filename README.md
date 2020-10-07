@@ -34,6 +34,13 @@ or
 yarn add effector fry-fx
 ```
 
+## Exports
+
+```ts
+export { createRequestFx } from './create-request-fx';
+export { createController } from './create-controller';
+```
+
 ## Usage
 
 Simple usage:
@@ -89,7 +96,8 @@ Initial cancel event doesn't work for normal events. Use your own cancel event
 for each normal request (optional):
 
 ```ts
-fetchCountryFx(1, { normal: true, cancel: cancelRequest });
+const controller = createController();
+fetchCountryFx(1, { normal: true, controller });
 ```
 
 The handler is compartible with `createEffect`. There is a classic way to create
@@ -108,6 +116,77 @@ const fetchCountry = async (
 export const fetchCountryFx = createRequestFx(fetchCountry);
 export const fetchCountryFxNormal = createEffect(fetchCountry);
 ```
+
+You can provide your own domain to `createRequestFx` or `createController`:
+
+```ts
+export const app = createDomain();
+export const fetchCountryFx = createRequestFx({
+  domain: app,
+  handler: async (
+    countryId: number,
+    controller?: Controller
+  ): Promise<Country> =>
+    request({
+      url: `api/locations/countries/${countryId}/`,
+      signal: await controller?.getSignal(),
+    }),
+});
+
+export const controller = createController({ domain: app });
+fetchCountryFx(1, { normal: true, controller });
+```
+
+### Types
+
+<details>
+<summary>
+  All
+</summary>
+
+```ts
+import { Effect, Unit, Domain } from 'effector';
+
+export interface Controller {
+  getSignal: Effect<void, AbortSignal>;
+  cancel: Effect<void, void>;
+}
+
+export interface ControllerConfig {
+  cancel?: Unit<unknown>;
+  domain?: Domain;
+}
+
+export type Handler<Params, Result> = (
+  params: Params,
+  controller?: Controller
+) => Promise<Result>;
+
+export interface Config<Params, Result> {
+  handler: Handler<Params, Result>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cancel?: Unit<any>;
+  domain?: Domain;
+}
+
+export type ConfigOrHandler<Params, Result> =
+  | Handler<Params, Result>
+  | Config<Params, Result>;
+
+export type FxOptions = {
+  normal?: boolean;
+  controller?: Controller;
+};
+
+export interface RequestEffect<Params, Done, Fail = Error>
+  extends Effect<Params, Done, Fail> {
+  (payload: Params, options: FxOptions): Promise<Done>;
+}
+
+export type ParamsRef<Params> = { current: [Params, FxOptions?] };
+```
+
+</details>
 
 ### Repository
 

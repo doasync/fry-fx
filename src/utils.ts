@@ -1,4 +1,5 @@
 import { Config, ConfigOrHandler, ParamsRef } from './types';
+import { defaultDomain } from './domain';
 
 export const normalizeConfig = <Params, Result>(
   config: ConfigOrHandler<Params, Result>
@@ -7,6 +8,7 @@ export const normalizeConfig = <Params, Result>(
     ? {
         handler: config,
         cancel: undefined,
+        domain: defaultDomain,
       }
     : config;
 

@@ -1,14 +1,16 @@
-import { attach, createEffect, createStore, sample } from 'effector';
+import { attach, sample } from 'effector';
 
 import { Controller, ControllerConfig } from './types';
+import { defaultDomain } from './domain';
 
 export const createController = (config?: ControllerConfig): Controller => {
-  const { cancel } = config ?? {};
-  const $controller = createStore(new AbortController());
-  const getSignalFx = createEffect(
+  const { cancel, domain = defaultDomain } = config ?? {};
+
+  const $controller = domain.createStore(new AbortController());
+  const getSignalFx = domain.createEffect(
     (controller: AbortController) => controller.signal
   );
-  const cancelFx = createEffect((controller: AbortController) =>
+  const cancelFx = domain.createEffect((controller: AbortController) =>
     controller.abort()
   );
 

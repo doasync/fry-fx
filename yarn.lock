@@ -2803,6 +2803,11 @@ fragment-cache@^0.2.1:
   dependencies:
     map-cache "^0.2.2"
 
+fry@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/fry/-/fry-2.3.0.tgz#64ed770365e2d3c3d13401bdf24d27e96878098d"
+  integrity sha512-f1BBhNLhXscFOAdnWVnKeMWh9G44Y2IR2NEXMZJkLQFLDWGTfnQsEmWYtt+SqLoKavn2owaauMCUdnNAYjHRUw==
+
 fs-extra@8.1.0:
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-8.1.0.tgz#49d43c45a88cd9677668cb7be1b46efdb8d2e1c0"
