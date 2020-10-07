@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "author": "doasync <doasync@gmail.com>",
   "license": "MIT",
-  "description": "Create self-cancellable fetch request",
+  "description": "Create self-cancellable fetch effects",
   "main": "dist/index.js",
   "module": "dist/fry-fx.esm.js",
   "typings": "dist/index.d.ts",
@@ -36,6 +36,7 @@
     "effector": ">=21.4.2"
   },
   "devDependencies": {
+    "effector": "^21.4.2",
     "husky": "^4.3.0",
     "tsdx": "^0.14.0",
     "tslib": "^2.0.2",

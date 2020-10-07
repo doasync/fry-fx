@@ -1,99 +1,116 @@
-# TSDX User Guide
+[![NPM Version][npm-image]][npm-url] ![NPM Downloads][downloads-image] [![GitHub issues][issues-image]][issues-url]
 
-Congrats! You just saved yourself hours of work by bootstrapping this project with TSDX. Let’s get you oriented with what’s here and how to use it.
+[npm-image]: https://img.shields.io/npm/v/fry-fx.svg
+[npm-url]: https://www.npmjs.com/package/fry-fx
+[downloads-image]: https://img.shields.io/npm/dw/fry-fx.svg
+[deps-image]: https://david-dm.org/doasync/fry-fx.svg
+[issues-image]: https://img.shields.io/github/issues/doasync/fry-fx.svg
+[issues-url]: https://github.com/doasync/fry-fx/issues
 
-> This TSDX setup is meant for developing libraries (not apps!) that can be published to NPM. If you’re looking to build a Node app, you could use `ts-node-dev`, plain `ts-node`, or simple `tsc`.
+# Cancellable request effects ☄️✨
 
-> If you’re new to TypeScript, checkout [this handy cheatsheet](https://devhints.io/typescript)
+This lib makes it possible to create self-cancellable request
+[effects](https://effector.now.sh/docs/api/effector/effect).
 
-## Commands
+When you trigger an effect, all previous pending fetch requests are cancelled
+(effects are rejected with AbortError).
 
-TSDX scaffolds your new library inside `/src`.
+In examples `request` is a `fetch` on steroids from
+[fry](https://www.npmjs.com/package/fry) package
 
-To run TSDX, use:
+> `fry-fx` is written in TypeScript
+
+---
+
+## Installation
 
 ```bash
-npm start # or yarn start
+npm install fry-fx
 ```
 
-This builds to `/dist` and runs the project in watch mode so any edits you save inside `src` causes a rebuild to `/dist`.
+or
 
-To do a one-off build, use `npm run build` or `yarn build`.
-
-To run tests, use `npm test` or `yarn test`.
-
-## Configuration
-
-Code quality is set up for you with `prettier`, `husky`, and `lint-staged`. Adjust the respective fields in `package.json` accordingly.
-
-### Jest
-
-Jest tests are set up to run with `npm test` or `yarn test`.
-
-#### Setup Files
-
-This is the folder structure we set up for you:
-
-```txt
-/src
-  index.tsx       # EDIT THIS
-/test
-  blah.test.tsx   # EDIT THIS
-.gitignore
-package.json
-README.md         # EDIT THIS
-tsconfig.json
+```bash
+yarn add fry-fx
 ```
 
-### Rollup
+## Usage
 
-TSDX uses [Rollup](https://rollupjs.org) as a bundler and generates multiple rollup configs for various module formats and build settings. See [Optimizations](#optimizations) for details.
+Simple usage:
 
-### TypeScript
-
-`tsconfig.json` is set up to interpret `dom` and `esnext` types, as well as `react` for `jsx`. Adjust according to your needs.
-
-## Continuous Integration
-
-### GitHub Actions
-
-A simple action is included that runs these steps on all pushes:
-
-- Installs deps w/ cache
-- Lints, tests, and builds
-
-## Optimizations
-
-Please see the main `tsdx` [optimizations docs](https://github.com/palmerhq/tsdx#optimizations). In particular, know that you can take advantage of development-only optimizations:
-
-```js
-// ./types/index.d.ts
-declare var __DEV__: boolean;
-
-// inside your code...
-if (__DEV__) {
-  console.log('foo');
-}
+```ts
+export const fetchCountryFx = createRequestFx(
+  async (countryId: number, controller?: Controller): Promise<Country> =>
+    request({
+      url: `api/countries/${countryId}/`,
+      signal: await controller?.getSignal(),
+    })
+);
 ```
 
-You can also choose to install and use [invariant](https://github.com/palmerhq/tsdx#invariant) and [warning](https://github.com/palmerhq/tsdx#warning) functions.
+You can provide custom cancel event:
 
-## Module Formats
+```ts
+export const cancelRequest = createEvent();
+export const fetchCountryFx = createRequestFx({
+  cancel: cancelRequest,
+  handler: async (
+    countryId: number,
+    controller?: Controller
+  ): Promise<Country> =>
+    request({
+      url: `api/countries/${countryId}/`,
+      signal: await controller?.getSignal(),
+    }),
+});
+```
 
-CJS, ESModules, and UMD module formats are supported.
+Usage of request effect:
 
-The appropriate paths are configured in `package.json` and `dist/index.js` accordingly. Please report if any issues are found.
+```ts
+// The result of last request is taken
+// There is only one request at a time
+fetchCountryFx(1); // fetch cancelled!
+fetchCountryFx(2); // fetch cancelled!
+fetchCountryFx(3); // fetch ok
+```
 
-## Named Exports
+And you can use it as a normal effect:
 
-Per Palmer Group guidelines, [always use named exports.](https://github.com/palmerhq/typescript#exports) Code split inside your React app instead of your React library.
+```ts
+// Fetches in parallel
+// There are three requests at a time
+fetchCountryFx(1, { normal: true }); // fetch ok
+fetchCountryFx(2, { normal: true }); // fetch ok
+fetchCountryFx(3, { normal: true }); // fetch ok
+```
 
-## Including Styles
+Initial cancel event doesn't work for normal events. Use your own cancel event
+to each normal request:
 
-There are many ways to ship styles, including with CSS-in-JS. TSDX has no opinion on this, configure how you like.
+```ts
+fetchCountryFx(1, { normal: true, cancel: cancelRequest });
+```
 
-For vanilla CSS, you can include it at the root directory and add it to the `files` section in your `package.json`, so that it can be imported separately by your users and run through their bundler's loader.
+The handler is compartible with `createEffect`. This is a classic way to create
+normal effect:
 
-## Publishing to NPM
+```ts
+const fetchCountry = async (
+  countryId: number,
+  controller?: Controller
+): Promise<Country> =>
+  request({
+    url: `api/countries/${countryId}/`,
+    signal: await controller?.getSignal(),
+  });
 
-We recommend using [np](https://github.com/sindresorhus/np).
+export const fetchCountryFx = createRequestFx(fetchCountry);
+export const fetchCountryFxNormal = createEffect(fetchCountry);
+```
+
+### Repository
+
+---
+
+GitHub ★: https://github.com/doasync/fry-fx
