@@ -8,7 +8,7 @@ import { createController } from './create-controller';
 export const fetchCountryFx = createRequestFx(
   async (countryId: number, controller?: Controller): Promise<Response> =>
     fetch(`api/countries/${countryId}/`, {
-      signal: await controller?.getSignal(),
+      signal: controller?.getSignal(),
     })
 );
 
@@ -22,7 +22,7 @@ export const fetchCountryFx2 = createRequestFx({
     controller?: Controller
   ): Promise<Response> =>
     fetch(`api/countries/${countryId}/`, {
-      signal: await controller?.getSignal(),
+      signal: controller?.getSignal(),
     }),
 });
 
@@ -43,12 +43,12 @@ fetchCountryFx(3, { normal: true }); // fetch ok
 // Initial cancel event doesn't work for normal events.
 // Use your own controller for each normal request (optional):
 
-const controller = createController();
-fetchCountryFx(1, { normal: true, controller });
+const ctrl = createController();
+fetchCountryFx(1, { normal: true, controller: ctrl });
 // Later in your code
-controller.cancel();
+ctrl.cancel();
 
-// The handler is compartible with `createEffect`.
+// The handler is compatible with `createEffect`.
 // There is a classic way to create normal effect:
 
 const fetchCountry = async (
@@ -56,7 +56,7 @@ const fetchCountry = async (
   controller?: Controller
 ): Promise<Response> =>
   fetch(`api/countries/${countryId}/`, {
-    signal: await controller?.getSignal(),
+    signal: controller?.getSignal(),
   });
 
 export const fetchCountryEffect = createRequestFx(fetchCountry);
@@ -72,11 +72,32 @@ export const fetchCountryFx3 = createRequestFx({
     controller?: Controller
   ): Promise<Response> =>
     fetch(`api/locations/countries/${countryId}/`, {
-      signal: await controller?.getSignal(),
+      signal: controller?.getSignal(),
     }),
 });
-
 // ... or `createController`:
 
 export const controller3 = createController({ domain: app });
-fetchCountryFx3(1, { normal: true, controller: controller3 });
+void fetchCountryFx3(1, { normal: true, controller: controller3 });
+
+// You can do a cleanup... Use .onCancel method of your controller:
+
+const fx = createRequestFx(async (params: number, controller) => {
+  let timeout: number;
+
+  return new Promise((resolve, reject) => {
+    void controller?.onCancel(() => {
+      clearTimeout(timeout);
+      reject(new Error('Cancelled'));
+    });
+    timeout = setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.log(`Not cancelled: ${params}`);
+      resolve(`Result: ${params}`);
+    });
+  });
+});
+
+void fx(1); // No logs, effect fails with "Cancelled" error
+void fx(2); // No logs, effect fails with "Cancelled" error
+void fx(3); // Logs "Not cancelled: 3", effect is done with "Result: 3"

@@ -1,3 +1,3 @@
 import { createDomain } from 'effector';
 
-export const defaultDomain = createDomain('fry-fx');
+export const defaultDomain = createDomain();

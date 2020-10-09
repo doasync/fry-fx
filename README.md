@@ -50,7 +50,7 @@ export const fetchCountryFx = createRequestFx(
   async (countryId: number, controller?: Controller): Promise<Country> =>
     request({
       url: `api/countries/${countryId}/`,
-      signal: await controller?.getSignal(),
+      signal: controller?.getSignal(),
     })
 );
 ```
@@ -67,7 +67,7 @@ export const fetchCountryFx = createRequestFx({
   ): Promise<Country> =>
     request({
       url: `api/countries/${countryId}/`,
-      signal: await controller?.getSignal(),
+      signal: controller?.getSignal(),
     }),
 });
 ```
@@ -92,8 +92,8 @@ fetchCountryFx(2, { normal: true }); // fetch ok
 fetchCountryFx(3, { normal: true }); // fetch ok
 ```
 
-Initial cancel event doesn't work for normal events. Use your own controller
-for each normal request (optional):
+Initial cancel event doesn't work for normal events. Use your own controller for
+each normal request (optional):
 
 ```ts
 const controller = createController();
@@ -112,7 +112,7 @@ const fetchCountry = async (
 ): Promise<Country> =>
   request({
     url: `api/countries/${countryId}/`,
-    signal: await controller?.getSignal(),
+    signal: controller?.getSignal(),
   });
 
 export const fetchCountryFx = createRequestFx(fetchCountry);
@@ -130,7 +130,7 @@ export const fetchCountryFx = createRequestFx({
     controller?: Controller
   ): Promise<Country> =>
     request({
-      url: `api/locations/countries/${countryId}/`,
+      url: `api/countries/${countryId}/`,
       signal: await controller?.getSignal(),
     }),
 });
@@ -138,6 +138,29 @@ export const fetchCountryFx = createRequestFx({
 // ... or `createController`:
 export const controller = createController({ domain: app });
 fetchCountryFx(1, { normal: true, controller });
+```
+
+// You can do a cleanup, use .onCancel method of your controller:
+
+```ts
+const fx = createRequestFx(async (params: number, controller) => {
+  let timeout: number;
+
+  return new Promise((resolve, reject) => {
+    void controller?.onCancel(() => {
+      clearTimeout(timeout);
+      reject(new Error('Cancelled'));
+    });
+    timeout = setTimeout(() => {
+      console.log(`Not cancelled: ${params}`);
+      resolve(`Result: ${params}`);
+    });
+  });
+});
+
+fx(1); // No logs, effect fails with "Cancelled" error
+fx(2); // No logs, effect fails with "Cancelled" error
+fx(3); // Logs "Not cancelled: 3", effect is done with "Result: 3"
 ```
 
 ### Types

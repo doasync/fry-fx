@@ -1,37 +1,36 @@
-import { attach, sample } from 'effector';
+import { sample } from 'effector';
 
-import { Controller, ControllerConfig } from './types';
 import { defaultDomain } from './domain';
+import { Controller, ControllerConfig, Subscription } from './types';
 
 export const createController = (config?: ControllerConfig): Controller => {
-  const { cancel, domain = defaultDomain } = config ?? {};
+  const { cancel: userCancel, domain = defaultDomain } = config ?? {};
 
-  const $controller = domain.createStore(new AbortController());
-  const getSignalFx = domain.createEffect(
-    (controller: AbortController) => controller.signal
-  );
-  const cancelFx = domain.createEffect((controller: AbortController) =>
-    controller.abort()
-  );
+  const cancel = domain.createEvent();
 
-  if (cancel) {
+  const onCancel = (fn: () => void): Subscription => {
+    return cancel.watch(() => fn());
+  };
+
+  const $controller = domain
+    .createStore(new AbortController())
+    .on(cancel, controller => {
+      controller.abort();
+      return new AbortController();
+    });
+
+  if (userCancel) {
     sample({
       source: $controller,
-      clock: cancel,
-      target: cancelFx,
+      clock: userCancel,
+      fn: () => {},
+      target: cancel,
     });
   }
 
-  $controller.on(cancelFx.done, () => new AbortController());
-
   return {
-    getSignal: attach({
-      source: $controller,
-      effect: getSignalFx,
-    }),
-    cancel: attach({
-      source: $controller,
-      effect: cancelFx,
-    }),
+    getSignal: () => $controller.getState().signal,
+    cancel,
+    onCancel,
   };
 };

@@ -1,39 +1,50 @@
-import { Config, ConfigOrHandler, ParamsRef } from './types';
+import { step } from 'effector';
+
 import { defaultDomain } from './domain';
+import { Config, ConfigOrHandler, Options } from './types';
 
 export const normalizeConfig = <Params, Result>(
-  config: ConfigOrHandler<Params, Result>
+  configOrHandler: ConfigOrHandler<Params, Result>
 ): Config<Params, Result> =>
-  typeof config === 'function'
+  typeof configOrHandler === 'function'
     ? {
-        handler: config,
+        handler: configOrHandler,
         cancel: undefined,
         domain: defaultDomain,
+        name: undefined,
+        sid: undefined,
       }
-    : config;
+    : configOrHandler;
 
-const paramsRef: ParamsRef<void> = { current: [undefined] };
-
-export const isParamsRef = <Params>(
-  params: Params | ParamsRef<Params>
-): params is ParamsRef<Params> =>
-  // @ts-expect-error: no overlap
-  params === paramsRef;
-
-export const enableFxOptions = <T>(fx: T): T => {
+export const enableFxOptions = <T>(
+  fx: T,
+  optionsRef: { current?: Options }
+): T => {
+  /* eslint-disable no-param-reassign,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-member-access */
   // @ts-expect-error: internal .create
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const defaultCreate = fx.create;
   // @ts-expect-error: internal .create
-  // eslint-disable-next-line no-param-reassign
-  fx.create = (params, [options]) => {
-    paramsRef.current = [params, options];
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return
-    return defaultCreate(paramsRef);
-  };
+  fx.create = (params, [options]) => defaultCreate([params, options]);
+
+  // @ts-expect-error: internal .graphite
+  fx.graphite.seq.unshift(
+    step.compute({
+      // @ts-expect-error: internal compute fn
+      fn(upd, _, stack) {
+        if (!stack.parent) {
+          const {
+            params: [params, options],
+            req,
+          } = upd;
+          optionsRef.current = options;
+          return { params, req };
+        }
+
+        return upd;
+      },
+    })
+  );
+  /* eslint-enable */
 
   return fx;
 };
-
-export const nextTick = async (): Promise<void> =>
-  new Promise(resolve => setTimeout(resolve));
