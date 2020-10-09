@@ -4,7 +4,6 @@ import { createController, createRequestFx } from '../src';
 
 export const argumentHistory = (fn: jest.Mock): unknown[] =>
   fn.mock.calls.map(([argument]: [unknown]) => argument);
-
 const sleep = async (ms: number) =>
   new Promise(resolve => setTimeout(resolve, ms));
 const nextTick = async () => sleep(0);

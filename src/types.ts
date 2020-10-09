@@ -45,3 +45,21 @@ export interface RequestEffect<Params, Done, Fail = Error>
   extends Effect<Params, Done, Fail> {
   (payload: Params, options?: Options): Promise<Done>;
 }
+
+export declare const createController: (
+  config?: ControllerConfig | undefined
+) => Controller;
+
+export declare function createRequestFx<
+  Params = void,
+  Done = unknown,
+  Fail = Error
+>(handler: Handler<Params, Done>): RequestEffect<Params, Done, Fail>;
+
+export declare function createRequestFx<Params, Done, Fail = Error>(config: {
+  name?: string;
+  handler: Handler<Params, Done>;
+  cancel?: Unit<any>;
+  domain?: Domain;
+  sid?: string;
+}): RequestEffect<Params, Done, Fail>;
