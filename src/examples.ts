@@ -101,3 +101,12 @@ const fx = createRequestFx(async (params: number, controller) => {
 void fx(1); // No logs, effect fails with "Cancelled" error
 void fx(2); // No logs, effect fails with "Cancelled" error
 void fx(3); // Logs "Not cancelled: 3", effect is done with "Result: 3"
+
+// For axios you can create cancelToken from controller
+
+const fetchPostFx = createRequestFx(
+  async (postId: number, controller?: Controller): Promise<AxiosResponse> =>
+    axios.get(`/posts/${postId}/`, {
+      cancelToken: controller && new axios.CancelToken(controller.onCancel),
+    })
+);
