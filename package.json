@@ -7,6 +7,10 @@
   "main": "dist/index.js",
   "module": "dist/fry-fx.esm.js",
   "typings": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doasync/fry-fx.git"
+  },
   "files": [
     "dist",
     "src"
