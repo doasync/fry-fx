@@ -1,9 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Domain, Unit } from 'effector';
 
 import { createController } from './create-controller';
 import { defaultDomain } from './domain';
-import { ConfigOrHandler, Handler, Options, RequestEffect } from './types';
+import {
+  Config,
+  ConfigType,
+  ConfigOrHandler,
+  Handler,
+  Options,
+  RequestEffect,
+} from './types';
 import { enableFxOptions, normalizeConfig } from './utils';
 
 export function createRequestFx<FN extends Handler<unknown, unknown>>(
@@ -24,13 +30,9 @@ export function createRequestFx<Params = void, Done = unknown, Fail = Error>(
 ): RequestEffect<Params, Done, Fail>;
 
 // eslint-disable-next-line @typescript-eslint/unified-signatures
-export function createRequestFx<FN extends Handler<unknown, unknown>>(config: {
-  name?: string;
-  handler: FN;
-  cancel?: Unit<any>;
-  domain?: Domain;
-  sid?: string;
-}): FN extends (...args: infer Arguments) => infer Done
+export function createRequestFx<FN extends Handler<unknown, unknown>>(
+  config: ConfigType<FN>
+): FN extends (...args: infer Arguments) => infer Done
   ? RequestEffect<
       Arguments['length'] extends 0
         ? void
@@ -42,13 +44,9 @@ export function createRequestFx<FN extends Handler<unknown, unknown>>(config: {
   : never;
 
 // eslint-disable-next-line @typescript-eslint/unified-signatures
-export function createRequestFx<Params, Done, Fail = Error>(config: {
-  name?: string;
-  handler: Handler<Params, Done>;
-  cancel?: Unit<any>;
-  domain?: Domain;
-  sid?: string;
-}): RequestEffect<Params, Done, Fail>;
+export function createRequestFx<Params, Done, Fail = Error>(
+  config: Config<Params, Done>
+): RequestEffect<Params, Done, Fail>;
 
 export function createRequestFx<Params = void, Done = unknown, Fail = Error>(
   configOrHandler: ConfigOrHandler<Params, Done>
@@ -59,7 +57,9 @@ export function createRequestFx<Params = void, Done = unknown, Fail = Error>(
     domain = defaultDomain,
     name,
     sid,
+    disableFxOptions,
   } = normalizeConfig<Params, Done>(configOrHandler);
+
   const controller = createController({ cancel, domain });
   const optionsRef: { current?: Options } = { current: undefined };
 
@@ -87,5 +87,5 @@ export function createRequestFx<Params = void, Done = unknown, Fail = Error>(
     },
   }) as RequestEffect<Params, Done, Fail>;
 
-  return enableFxOptions(fx, optionsRef);
+  return disableFxOptions ? fx : enableFxOptions(fx, optionsRef);
 }

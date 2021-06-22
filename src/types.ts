@@ -30,6 +30,17 @@ export interface Config<Params, Result> {
   domain?: Domain;
   name?: string;
   sid?: string;
+  disableFxOptions?: boolean;
+}
+
+export interface ConfigType<FN> {
+  handler: FN;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cancel?: Unit<any>;
+  domain?: Domain;
+  name?: string;
+  sid?: string;
+  disableFxOptions?: boolean;
 }
 
 export type ConfigOrHandler<Params, Result> =
@@ -56,10 +67,6 @@ export declare function createRequestFx<
   Fail = Error
 >(handler: Handler<Params, Done>): RequestEffect<Params, Done, Fail>;
 
-export declare function createRequestFx<Params, Done, Fail = Error>(config: {
-  name?: string;
-  handler: Handler<Params, Done>;
-  cancel?: Unit<any>;
-  domain?: Domain;
-  sid?: string;
-}): RequestEffect<Params, Done, Fail>;
+export declare function createRequestFx<Params, Done, Fail = Error>(
+  config: Config<Params, Done>
+): RequestEffect<Params, Done, Fail>;

@@ -250,6 +250,44 @@ describe('effect', () => {
     ]);
   });
 
+  it('supports disableFxOptions', async () => {
+    const doneParams = jest.fn();
+    const fail = jest.fn();
+    const signals: Array<AbortSignal | undefined> = [];
+
+    const fx = createRequestFx({
+      disableFxOptions: true,
+      handler: (_params: number, controller) => {
+        const signal = controller?.getSignal();
+        signals.push(signal);
+      },
+    });
+
+    fx.done.watch(({ params }) => {
+      doneParams(params);
+    });
+    fx.fail.watch(fail);
+
+    void fx(0, { normal: true }); // Options are ignored
+    void fx(1);
+    void fx(2);
+    void fx(3);
+    void fx(0, { normal: true }); // Options are ignored
+
+    expect(signals.map(signal => signal?.aborted)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      false,
+    ]);
+
+    await nextTick();
+
+    expect(argumentHistory(doneParams)).toEqual([0, 1, 2, 3, 0]);
+    expect(argumentHistory(fail)).toEqual([]);
+  });
+
   it('supports onCancel on controller', async () => {
     const done = jest.fn();
     const fail = jest.fn();

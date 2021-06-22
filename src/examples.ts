@@ -2,6 +2,7 @@ import { createEvent, createDomain, createEffect } from 'effector';
 import { Controller } from './types';
 import { createRequestFx } from './create-request-fx';
 import { createController } from './create-controller';
+import axios, { AxiosResponse } from 'axios';
 
 // Simple usage:
 
@@ -110,3 +111,5 @@ const fetchPostFx = createRequestFx(
       cancelToken: controller && new axios.CancelToken(controller.onCancel),
     })
 );
+
+fetchPostFx(1);

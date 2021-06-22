@@ -10,7 +10,8 @@
 # Cancellable fetch requests ☄️✨
 
 This lib makes it possible to create self-cancellable request
-[effects](https://effector.now.sh/docs/api/effector/effect). It needs [effector](https://effector.now.sh) as a peer-dependency.
+[effects](https://effector.now.sh/docs/api/effector/effect). It needs
+[effector](https://effector.now.sh) as a peer-dependency.
 
 When you trigger an effect, all previous pending fetch requests are cancelled
 (effects are rejected with AbortError).
@@ -55,7 +56,7 @@ export const fetchCountryFx = createRequestFx(
 );
 ```
 
-You can provide custom cancel event:
+You can provide custom cancel event to cancel request manually:
 
 ```ts
 export const cancelRequest = createEvent();
@@ -82,7 +83,7 @@ fetchCountryFx(2); // fetch cancelled!
 fetchCountryFx(3); // fetch ok
 ```
 
-And you can use it as a normal effect:
+And you can use it as a normal effect (classic behavior):
 
 ```ts
 // Fetches in parallel
@@ -92,8 +93,7 @@ fetchCountryFx(2, { normal: true }); // fetch ok
 fetchCountryFx(3, { normal: true }); // fetch ok
 ```
 
-Initial cancel event doesn't work for normal events. Use your own controller for
-each normal request (optional):
+Initial cancel event doesn't work for normal events. Use your own controller for each normal request (optional):
 
 ```ts
 const controller = createController();
@@ -102,8 +102,7 @@ fetchCountryFx(1, { normal: true, controller });
 controller.cancel();
 ```
 
-The handler is compartible with `createEffect`. There is a classic way to create
-normal effect:
+The handler is compatible with `createEffect`. There is a classic way to create normal effect:
 
 ```ts
 const fetchCountry = async (
@@ -140,7 +139,7 @@ export const controller = createController({ domain: app });
 fetchCountryFx(1, { normal: true, controller });
 ```
 
-// You can do a cleanup, use .onCancel method of your controller:
+You can do a cleanup, use .onCancel method of your controller:
 
 ```ts
 const fx = createRequestFx(async (params: number, controller) => {
@@ -163,6 +162,27 @@ fx(2); // No logs, effect fails with "Cancelled" error
 fx(3); // Logs "Not cancelled: 3", effect is done with "Result: 3"
 ```
 
+The library modifies internal `.create` method in order to pass options as a second argument to an effect. You can
+disable this behavior and return unmodified effect by using `disableFxOptions` config option:
+
+```ts
+export const app = createDomain();
+export const fetchCountryFx = createRequestFx({
+  disableFxOptions: true,
+  handler: async (
+    countryId: number,
+    controller?: Controller
+  ): Promise<Country> =>
+    request({
+      url: `api/countries/${countryId}/`,
+      signal: controller?.getSignal(),
+    }),
+});
+
+// The sacond argument is disabled and ignored
+fetchCountryFx(1 /*, { normal: true } */);
+```
+
 ### Types
 
 <details>
@@ -171,24 +191,6 @@ fx(3); // Logs "Not cancelled: 3", effect is done with "Result: 3"
 </summary>
 
 ```ts
-import { Domain, Effect, Event, Unit } from 'effector';
-
-export declare const createController: (
-  config?: ControllerConfig | undefined
-) => Controller;
-
-export declare function createRequestFx<
-  Params = void,
-  Done = unknown,
-  Fail = Error
->(handler: Handler<Params, Done>): RequestEffect<Params, Done, Fail>;
-
-export declare function createRequestFx<Params, Done, Fail = Error>(config: {
-  handler: Handler<Params, Done>;
-  cancel?: Unit<any>;
-  domain?: Domain;
-}): RequestEffect<Params, Done, Fail>;
-
 export type Subscription = {
   unsubscribe: () => void;
   (): void;
@@ -219,6 +221,17 @@ export interface Config<Params, Result> {
   domain?: Domain;
   name?: string;
   sid?: string;
+  disableFxOptions?: boolean;
+}
+
+export interface ConfigType<FN> {
+  handler: FN;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cancel?: Unit<any>;
+  domain?: Domain;
+  name?: string;
+  sid?: string;
+  disableFxOptions?: boolean;
 }
 
 export type ConfigOrHandler<Params, Result> =
@@ -234,6 +247,20 @@ export interface RequestEffect<Params, Done, Fail = Error>
   extends Effect<Params, Done, Fail> {
   (payload: Params, options?: Options): Promise<Done>;
 }
+
+export declare const createController: (
+  config?: ControllerConfig | undefined
+) => Controller;
+
+export declare function createRequestFx<
+  Params = void,
+  Done = unknown,
+  Fail = Error
+>(handler: Handler<Params, Done>): RequestEffect<Params, Done, Fail>;
+
+export declare function createRequestFx<Params, Done, Fail = Error>(
+  config: Config<Params, Done>
+): RequestEffect<Params, Done, Fail>;
 ```
 
 </details>
@@ -246,13 +273,6 @@ export interface RequestEffect<Params, Done, Fail = Error>
 </summary>
 
 ```ts
-
-export const argumentHistory = (fn: jest.Mock): unknown[] =>
-  fn.mock.calls.map(([argument]: [unknown]) => argument);
-const sleep = async (ms: number) =>
-  new Promise(resolve => setTimeout(resolve, ms));
-const nextTick = async () => sleep(0);
-
 describe('createRequestFx', () => {
   it('accepts handler', async () => {
     const fx = createRequestFx(async () => Promise.resolve('data'));
@@ -495,6 +515,44 @@ describe('effect', () => {
     ]);
   });
 
+  it('supports disableFxOptions', async () => {
+    const doneParams = jest.fn();
+    const fail = jest.fn();
+    const signals: Array<AbortSignal | undefined> = [];
+
+    const fx = createRequestFx({
+      disableFxOptions: true,
+      handler: (_params: number, controller) => {
+        const signal = controller?.getSignal();
+        signals.push(signal);
+      },
+    });
+
+    fx.done.watch(({ params }) => {
+      doneParams(params);
+    });
+    fx.fail.watch(fail);
+
+    void fx(0, { normal: true }); // Options are ignored
+    void fx(1);
+    void fx(2);
+    void fx(3);
+    void fx(0, { normal: true }); // Options are ignored
+
+    expect(signals.map(signal => signal?.aborted)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      false,
+    ]);
+
+    await nextTick();
+
+    expect(argumentHistory(doneParams)).toEqual([0, 1, 2, 3, 0]);
+    expect(argumentHistory(fail)).toEqual([]);
+  });
+
   it('supports onCancel on controller', async () => {
     const done = jest.fn();
     const fail = jest.fn();
@@ -569,7 +627,6 @@ describe('forked scope', () => {
     expect(scope.getState($store)).toEqual('data: 3');
   });
 });
-
 ```
 
 </details>

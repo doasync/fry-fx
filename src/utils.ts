@@ -9,10 +9,7 @@ export const normalizeConfig = <Params, Result>(
   typeof configOrHandler === 'function'
     ? {
         handler: configOrHandler,
-        cancel: undefined,
         domain: defaultDomain,
-        name: undefined,
-        sid: undefined,
       }
     : configOrHandler;
 
